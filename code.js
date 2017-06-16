@@ -37,6 +37,10 @@ const Vec2 = (function(){
       return v1[0] * v2[0] + v1[1] * v2[1];
    }
 
+   function distance(p1, p2) {
+      return length(Vec2.sub(p1, p2));
+   }
+
    function normalize(v) {
       const len = length(v);
       return [
@@ -56,6 +60,7 @@ const Vec2 = (function(){
       scale,
       rotate,
       dot,
+      distance,
       normalize,
       length,
       FORWARD,
@@ -72,7 +77,7 @@ const entities = [
       color: '#27ae60',
       size: 50,
       tag: 'turret',
-      shape: 'circle',      
+      shape: 'circle',
    },
    {
       position: [canvas.width / 2, 50],
@@ -80,7 +85,7 @@ const entities = [
       color: '#9b59b6',
       size: 20,
       tag: 'turret',
-      shape: 'circle',      
+      shape: 'circle',
    },
    {
       position: [canvas.width - 50, canvas.height / 2],
@@ -88,7 +93,7 @@ const entities = [
       color: '#e74c3c',
       size: 10,
       tag: 'turret',
-      shape: 'circle',     
+      shape: 'circle',
    },
    {
       position: [canvas.width / 2, canvas.height - 100],
@@ -132,7 +137,7 @@ canvas.addEventListener('mousedown', e => {
       .filter(entity => entity.tag === 'turret')
       .forEach(turret => {
          const offset = Vec2.scale(Vec2.rotate(turret.orientation), turret.size);
-         entities.push({            
+         entities.push({
             position: Vec2.add(turret.position, offset),
             orientation: turret.orientation,
             color: turret.color,
@@ -156,10 +161,11 @@ function circleVsCircle(s1, s2) {
 
 function getRect(entity) {
    const size = Vec2.fromValues(entity.size, entity.size);
+   const halfSize = Vec2.scale(size, 1);
    return {
-      min: Vec2.sub(entity.position, size),
-      max: Vec2.add(entity.position, size)
-   }  
+      min: Vec2.sub(entity.position, halfSize),
+      max: Vec2.add(entity.position, halfSize)
+   }
 }
 
 function getCircle(entity) {
@@ -202,20 +208,19 @@ function rectContainsPoint(r, p) {
    return true;
 }
 
-function rectVsCircle(r, s) {
-   if(r.max[0] + s.radius < s.center[0]) {
-      return false;
-   }
-   if(r.max[1] + s.radius < s.center[1]) {
-      return false;
-   }
-   if(r.min[0] - s.radius > s.center[0]) {
-      return false;
-   }
-   if(r.min[1] - s.radius > s.center[1]) {
-      return false;
-   }
-   return true;
+function closestPointInRect(point, rect) {
+   var x = Math.max(point[0], rect.min[0]);
+   x = Math.min(x, rect.max[0]);
+   var y = Math.max(point[1], rect.min[1]);
+   y = Math.min(y, rect.max[1]);
+
+   return [x, y];
+}
+
+function rectVsCircle(r, c) {
+   const closest = closestPointInRect(c.center, r);
+   const distance = Vec2.distance(c.center, closest);
+   return distance < c.radius;
 }
 
 function render() {
@@ -227,7 +232,7 @@ function render() {
          let direction = Vec2.rotate(projectile.orientation);
          direction = Vec2.scale(direction, speed);
          projectile.position = Vec2.add(projectile.position, direction);
-         
+
          entities
             .filter(entity => entity.tag.match(/projectile|enemy/))
             .filter(entity => entity !== projectile)
@@ -236,14 +241,16 @@ function render() {
                if(entity.shape === 'circle') {
                   if(circleVsCircle(getCircle(entity), getCircle(projectile))) {
                      entities.splice(entities.indexOf(projectile), 1);
-                     entity.color = projectile.color;  
+                     entity.color = projectile.color;
                      entity.size += projectile.size * 0.1;
                   }
                }
                else {
-                  if(rectVsCircle(getRect(entity), getCircle(projectile))) {
+                  const rect = getRect(entity);
+                  const circle = getCircle(projectile);
+                  if(rectVsCircle(rect, circle)) {
                      entities.splice(entities.indexOf(projectile), 1);
-                     entity.color = projectile.color;           
+                     entity.color = projectile.color;
                   }
                }
             })
@@ -276,6 +283,28 @@ function render() {
          entity.position[1] + (entity.size * Math.sin(entity.orientation))
       );
       ctx.stroke();
+   });
+
+   entities.forEach(entity => {
+      const circle = getCircle(entity);
+      const rect = getRect(entity);
+      ctx.beginPath();
+      ctx.arc(
+         circle.center[0],
+         circle.center[1],
+         circle.radius,
+         0,
+         Math.PI * 2
+      )
+      ctx.stroke();
+      ctx.rect(
+         rect.min[0],
+         rect.min[1],
+         rect.max[0] - rect.min[0],
+         rect.max[1] - rect.min[1]
+      );
+      ctx.stroke();
+
    });
 
    requestAnimationFrame(render);
