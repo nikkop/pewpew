@@ -3,6 +3,8 @@ canvas.width = window.innerWidth / 2;
 canvas.height = window.innerHeight / 2;
 
 let hovered = null;
+let lastMousePosition = null;
+let grabbedObject = null;
 
 let objects = [
    {
@@ -30,9 +32,45 @@ init();
 function init() {
    canvas.addEventListener('mousemove', e => {
       const mousePosition = getMousePosition(canvas, e);
-      hovered = objects.find(object => rectContainsPoint(rectFromObject(object), mousePosition));
+      hovered = getObjectAtPosition(mousePosition);
+      updateGrabbedObject(lastMousePosition, mousePosition);
+      lastMousePosition = mousePosition;
    });
+   canvas.addEventListener('mousedown', e => {
+      const mousePosition = getMousePosition(canvas, e);
+      const object = getObjectAtPosition(mousePosition);
+      grabObject(object);
+   });
+   window.addEventListener('mouseup', e => {
+      grabObject(null);
+   })
    requestAnimationFrame(render);
+}
+
+function grabObject(object) {
+   grabbedObject = object;
+   objects.sort((a, b) => {
+      if(a === grabbedObject) {
+         return 1;
+      }
+      if(b === grabbedObject) {
+         return -1;
+      }
+      return 0;
+   })
+   return grabbedObject;
+}
+
+function getObjectAtPosition(position) {
+   const objectAtPosition = objects.slice().reverse().find(object => rectContainsPoint(rectFromObject(object), position));
+   return objectAtPosition;
+}
+
+function updateGrabbedObject(lastPosition, position) {
+   if(!grabbedObject) {
+      return;
+   }
+   grabbedObject.position = Vec2.add(grabbedObject.position, Vec2.sub(position, lastPosition));
 }
 
 function rectContainsPoint({min, max}, point) {

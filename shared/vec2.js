@@ -5,6 +5,10 @@ const Vec2 = (function(){
       return new Float32Array([0, 0]);
    }
 
+   function clone(v) {
+      return new Float32Array(v);
+   }
+
    function fromValues(x, y) {
       return [x, y];
    }
@@ -66,6 +70,7 @@ const Vec2 = (function(){
 
    return {
       create,
+      clone,
       fromValues,
       add,
       sub,
