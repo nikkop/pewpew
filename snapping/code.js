@@ -2,6 +2,8 @@ const canvas = document.querySelector('canvas');
 canvas.width = window.innerWidth / 2;
 canvas.height = window.innerHeight / 2;
 
+let hovered = null;
+
 let objects = [
    {
       name: 'square',
@@ -28,26 +30,22 @@ init();
 function init() {
    canvas.addEventListener('mousemove', e => {
       const mousePosition = getMousePosition(canvas, e);
-      const whatever = objects.find(object => rectContainsPoint(rectFromObject(object), mousePosition));
-      if(whatever) {
-
-      console.log(whatever);
-      }
+      hovered = objects.find(object => rectContainsPoint(rectFromObject(object), mousePosition));
    });
    requestAnimationFrame(render);
 }
 
-function rectContainsPoint(rect, point) {
-   if(point[0] < rect.min[0]) {
+function rectContainsPoint({min, max}, point) {
+   if(point[0] < min[0]) {
       return false;
    }
-   if(point[0] > rect.max[0]) {
+   if(point[0] > max[0]) {
       return false;
    }
-   if(point[1] < rect.min[1]) {
+   if(point[1] < min[1]) {
       return false;
    }
-   if(point[1] > rect.max[1]) {
+   if(point[1] > max[1]) {
       return false;
    }
    return true;
@@ -76,15 +74,34 @@ function getMousePosition(element, event) {
 
 function render() {
    const ctx = canvas.getContext('2d');
+   
    ctx.fillStyle = '#EEE';
    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
    objects.forEach(object => {
+      const rect = rectFromObject(object);      
+      const size = Vec2.sub(rect.max, rect.min);
+      const GLOW_SIZE = 5;
+      if(hovered === object) {
+         // draw glowy
+         ctx.filter = 'blur(20px)';
+         ctx.fillStyle = 'lime';
+         ctx.beginPath();
+         ctx.rect(
+            rect.min[0] - GLOW_SIZE,
+            rect.min[1] - GLOW_SIZE,
+            size[0] + GLOW_SIZE * 2,
+            size[1] + GLOW_SIZE * 2
+         );
+         ctx.fill();
+      }
+
+      // draw normally
+      ctx.filter = 'none';
       ctx.fillStyle = object.color;
       ctx.strokeStyle = 'black';
       ctx.beginPath();
-      const rect = rectFromObject(object);
-      ctx.rect(rect.min[0], rect.min[1], rect.max[0] - rect.min[0], rect.max[1] - rect.min[1]);
+      ctx.rect(rect.min[0], rect.min[1], size[0], size[1]);
       ctx.fill();
       ctx.stroke();
    })
