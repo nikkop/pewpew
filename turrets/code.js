@@ -1,72 +1,3 @@
-const Vec2 = (function(){
-   const FORWARD = Object.freeze([1, 0]);
-
-   function fromValues(x, y) {
-      return [x, y];
-   }
-
-   function add(v1, v2) {
-      return [
-         v1[0] + v2[0],
-         v1[1] + v2[1]
-      ];
-   }
-
-   function sub(v1, v2) {
-      return [
-         v1[0] - v2[0],
-         v1[1] - v2[1]
-      ];
-   }
-
-   function scale(v, scalar) {
-      return [
-         v[0] * scalar,
-         v[1] * scalar
-      ];
-   }
-
-   function rotate(angle) {
-      return [
-         Math.cos(angle),
-         Math.sin(angle)
-      ];
-   }
-
-   function dot(v1, v2) {
-      return v1[0] * v2[0] + v1[1] * v2[1];
-   }
-
-   function distance(p1, p2) {
-      return length(Vec2.sub(p1, p2));
-   }
-
-   function normalize(v) {
-      const len = length(v);
-      return [
-         v[0] / len,
-         v[1] / len
-      ];
-   }
-
-   function length(v) {
-      return Math.sqrt((v[0] * v[0]) + (v[1] * v[1]));
-   }
-
-   return {
-      fromValues,
-      add,
-      sub,
-      scale,
-      rotate,
-      dot,
-      distance,
-      normalize,
-      length,
-      FORWARD,
-   };
-})()
-
 const canvas = document.querySelector('#canvas');
 const ctx = canvas.getContext('2d');
 
@@ -223,38 +154,80 @@ function rectVsCircle(r, c) {
    return distance < c.radius;
 }
 
+function resolveProjectileCollision(p1, p2) {
+   const p1Dir = Vec2.rotate(p1.orientation);
+   const p2Dir = Vec2.rotate(p2.orientation);
+
+   const p1Angle = Vec2.dot(p1Dir, Vec2.normalize(Vec2.sub(p2.position, p1.position)));
+   const p2Angle = Vec2.dot(p2Dir, Vec2.normalize(Vec2.sub(p1.position, p2.position)));
+
+   return p2Angle > p1Angle ? p1 : p2;
+}
+
 function render() {
    // logic
-   entities
-      .filter(entity => entity.tag === 'projectile')
-      .forEach((projectile, index) => {
-         const speed = 3;
-         let direction = Vec2.rotate(projectile.orientation);
-         direction = Vec2.scale(direction, speed);
-         projectile.position = Vec2.add(projectile.position, direction);
+   // entities
+   //    .filter(entity => entity.tag === 'projectile')
+   //    .forEach((projectile, index) => {
+   //       const speed = 3;
+   //       let direction = Vec2.rotate(projectile.orientation);
+   //       direction = Vec2.scale(direction, speed);
+   //       projectile.position = Vec2.add(projectile.position, direction);
 
-         entities
-            .filter(entity => entity.tag.match(/projectile|enemy/))
-            .filter(entity => entity !== projectile)
-            .filter(entity => entity.color !== projectile.color)
-            .forEach(entity => {
-               if(entity.shape === 'circle') {
-                  if(circleVsCircle(getCircle(entity), getCircle(projectile))) {
-                     entities.splice(entities.indexOf(projectile), 1);
-                     entity.color = projectile.color;
-                     entity.size += projectile.size * 0.1;
-                  }
+   //       entities
+   //          .filter(entity => entity.tag.match(/projectile|enemy/))
+   //          .filter(entity => entity !== projectile)
+   //          .filter(entity => entity.color !== projectile.color)
+   //          .forEach(entity => {
+   //             if(entity.shape === 'circle') {
+   //                if(circleVsCircle(getCircle(entity), getCircle(projectile))) {
+   //                   entities.splice(entities.indexOf(projectile), 1);
+   //                   entity.color = projectile.color;
+   //                   entity.size += projectile.size * 0.1;
+   //                }
+   //             }
+   //             else {
+   //                const rect = getRect(entity);
+   //                const circle = getCircle(projectile);
+   //                if(rectVsCircle(rect, circle)) {
+   //                   entities.splice(entities.indexOf(projectile), 1);
+   //                   entity.color = projectile.color;
+   //                }
+   //             }
+   //          })
+   //    });
+
+
+   // Get all projectiles
+   const projectiles = entities.filter(entity => entity.tag === 'projectile');
+
+   // First update position of all projectiles
+   projectiles.forEach(projectile => {
+      const speed = 3;
+      let direction = Vec2.rotate(projectile.orientation);
+      direction = Vec2.scale(direction, speed);
+      projectile.position = Vec2.add(projectile.position, direction);
+   });
+
+   // Check collision between all projectiles
+   projectiles.forEach(projectile1 => {
+      projectiles
+         .filter(projectile2 => projectile2 !== projectile1)
+         .filter(projectile2 => projectile2.color !== projectile1.color)
+         .forEach(projectile2 => {
+            if(circleVsCircle(getCircle(projectile1), getCircle(projectile2))) {
+               const loser = resolveProjectileCollision(projectile1, projectile2);
+               const winner = loser === projectile1 ? projectile2 : projectile1;
+               if(entities.indexOf(loser) !== -1) {   
+                  entities.splice(entities.indexOf(loser), 1);
+                  winner.size += loser.size * 0.25;
                }
-               else {
-                  const rect = getRect(entity);
-                  const circle = getCircle(projectile);
-                  if(rectVsCircle(rect, circle)) {
-                     entities.splice(entities.indexOf(projectile), 1);
-                     entity.color = projectile.color;
-                  }
-               }
-            })
-      });
+            }
+         })
+   })
+
+   // Check collision between projectiles and rest
+
 
    // render
    ctx.fillStyle = '#ecf0f1';
