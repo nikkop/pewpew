@@ -1,6 +1,10 @@
 const Vec2 = (function(){
    const FORWARD = Object.freeze([1, 0]);
 
+   function create() {
+      return new Float32Array([0, 0]);
+   }
+
    function fromValues(x, y) {
       return [x, y];
    }
@@ -17,6 +21,13 @@ const Vec2 = (function(){
          v1[0] - v2[0],
          v1[1] - v2[1]
       ];
+   }
+
+   function divide(v, scalar) {
+      return [
+         v[0] / scalar,
+         v[1] / scalar
+      ]
    }
 
    function scale(v, scalar) {
@@ -54,9 +65,11 @@ const Vec2 = (function(){
    }
 
    return {
+      create,
       fromValues,
       add,
       sub,
+      divide,
       scale,
       rotate,
       dot,
