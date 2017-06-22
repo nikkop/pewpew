@@ -229,6 +229,12 @@ function render() {
                ...closestPointsToRect[i]
             );
             ctx.stroke();
+
+            ctx.font = '14px monospace';
+            ctx.fillText(
+               Vec2.distance(closestPointsOnRect[i], closestPointsToRect[i]).toFixed(0),
+               ...Vec2.add(closestPointsOnRect[i], Vec2.scale(Vec2.sub(closestPointsToRect[i], closestPointsOnRect[i]), 0.5)) 
+            );
          }
       }
 
