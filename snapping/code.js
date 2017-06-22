@@ -93,6 +93,15 @@ function rectContainsPoint({min, max}, point) {
    return true;
 }
 
+function closestPointInRect(point, rect) {
+   var x = Math.max(point[0], rect.min[0]);
+   x = Math.min(x, rect.max[0]);
+   var y = Math.max(point[1], rect.min[1]);
+   y = Math.min(y, rect.max[1]);
+
+   return [x, y];
+}
+
 // Return new object based on size and position
 function rectFromObject({position, size}) {
    const halfSize = Vec2.divide(size, 2);
@@ -112,6 +121,10 @@ function getMousePosition(element, event) {
       [rect.left, rect.top]
    );
    return mousePosition;
+}
+
+function getRectCenter(rect) {
+   return Vec2.add(rect.min, Vec2.scale(Vec2.sub(rect.max, rect.min), 0.5));
 }
 
 function drawEye(pos, target, radius) {
@@ -151,7 +164,8 @@ function render() {
    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
    objects.forEach(object => {
-      const rect = rectFromObject(object);      
+      const rect = rectFromObject(object);
+      const rectCenter = getRectCenter(rect);
       const size = Vec2.sub(rect.max, rect.min);
       const GLOW_SIZE = 5;
       if(hovered === object) {
@@ -165,7 +179,7 @@ function render() {
             size[0] + GLOW_SIZE * 2,
             size[1] + GLOW_SIZE * 2
          );
-         ctx.fill();0
+         ctx.fill();
       }
 
       // draw normally
@@ -182,6 +196,43 @@ function render() {
       ctx.rect(rect.min[0] + 10, rect.min[1] + 10, size[0] - 20, size[1] - 20);
       ctx.fill();
       ctx.stroke();
+
+
+      // Points
+      if(hovered === object) {
+         const closestPointsToRect = objects
+            .filter(obj => obj !== hovered)
+            .map(rectFromObject)
+            .map(rect => closestPointInRect(rectCenter, rect));
+
+         const closestPointsOnRect = closestPointsToRect
+            .map(point => closestPointInRect(point, rect));
+            
+         closestPointsToRect.concat(closestPointsOnRect).forEach(point => {
+            ctx.beginPath();
+            ctx.fillStyle = 'red';
+            ctx.arc(
+               ...point,
+               5,
+               0,
+               Math.PI * 2
+            );
+            ctx.fill();
+         })
+
+         for(let i = 0; i < closestPointsToRect.length; i++) {
+            ctx.beginPath();
+            ctx.moveTo(
+               ...closestPointsOnRect[i]
+            );
+            ctx.lineTo(
+               ...closestPointsToRect[i]
+            );
+            ctx.stroke();
+         }
+      }
+
+
 
       // Eyeballs
       const eyeRadius = 15;
