@@ -115,18 +115,20 @@ function getMousePosition(element, event) {
 }
 
 function drawEye(pos, target, radius) {
-   const pupilRadius = radius / 3;  
+   const distanceFromTarget = Vec2.distance(pos, target);
+   const eyeRadius = radius + Math.min(radius / 3, radius * (distanceFromTarget / 1000));
+   const pupilRadius = eyeRadius / 3;
 
    const pupilCenter = Vec2.add(
       pos,
-      Vec2.scale(Vec2.normalize(Vec2.sub(target, pos)), radius - (pupilRadius * 2))
+      Vec2.scale(Vec2.normalize(Vec2.sub(target, pos)), eyeRadius - (pupilRadius * 2))
    );
 
    ctx.beginPath();
    ctx.fillStyle = 'beige';
    ctx.arc(
       ...pos,
-      radius,
+      eyeRadius,
       0,
       Math.PI * 2,
    );
