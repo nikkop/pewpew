@@ -1,9 +1,10 @@
 const canvas = document.querySelector('canvas');
+const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth / 2;
 canvas.height = window.innerHeight / 2;
 
 let hovered = null;
-let lastMousePosition = null;
+let lastMousePosition = [0, 0];
 let grabbedObject = null;
 
 let objects = [
@@ -11,20 +12,23 @@ let objects = [
       name: 'square',
       color: 'seashell',
       size: [100, 100],
-      position: [100, 200]
+      position: [100, 200],
+      orientation: 0
    },
    {
       name: 'wide',
       color: 'navajowhite',
       size: [200, 100],
-      position: [600, 150]
+      position: [600, 150],
+      orientation: 0
    },
    {
       name: 'tall',
       color: 'navajowhite',
       size: [100, 200],
-      position: [300, 300]
-   }
+      position: [300, 300],
+      orientation: 0
+   },
 ]
 
 init();
@@ -110,9 +114,37 @@ function getMousePosition(element, event) {
    return mousePosition;
 }
 
+function drawEye(pos, target, radius) {
+   const pupilRadius = radius / 3;  
+
+   const pupilCenter = Vec2.add(
+      pos,
+      Vec2.scale(Vec2.normalize(Vec2.sub(target, pos)), radius - (pupilRadius * 2))
+   );
+
+   ctx.beginPath();
+   ctx.fillStyle = 'beige';
+   ctx.arc(
+      ...pos,
+      radius,
+      0,
+      Math.PI * 2,
+   );
+   ctx.fill();
+   ctx.stroke();
+
+   ctx.beginPath();
+   ctx.fillStyle = 'black';
+   ctx.arc(
+      ...pupilCenter,
+      pupilRadius,
+      0,
+      Math.PI * 2
+   );
+   ctx.fill();
+}
+
 function render() {
-   const ctx = canvas.getContext('2d');
-   
    ctx.fillStyle = '#EEE';
    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -123,7 +155,7 @@ function render() {
       if(hovered === object) {
          // draw glowy
          ctx.filter = 'blur(20px)';
-         ctx.fillStyle = 'lime';
+         ctx.fillStyle = 'teal';
          ctx.beginPath();
          ctx.rect(
             rect.min[0] - GLOW_SIZE,
@@ -131,7 +163,7 @@ function render() {
             size[0] + GLOW_SIZE * 2,
             size[1] + GLOW_SIZE * 2
          );
-         ctx.fill();
+         ctx.fill();0
       }
 
       // draw normally
@@ -142,6 +174,30 @@ function render() {
       ctx.rect(rect.min[0], rect.min[1], size[0], size[1]);
       ctx.fill();
       ctx.stroke();
+      
+      ctx.beginPath();
+      ctx.fillStyle = 'white';
+      ctx.rect(rect.min[0] + 10, rect.min[1] + 10, size[0] - 20, size[1] - 20);
+      ctx.fill();
+      ctx.stroke();
+
+      // Eyeballs
+      const eyeRadius = 15;
+      const offsetX = 20;
+      const eyesCenter = Vec2.add(rect.min, [size[0] / 2, eyeRadius + 20]);
+      // const center = Vec2.scale(size, 0.5);
+
+      drawEye(
+         Vec2.add(eyesCenter, [-offsetX, 0]),
+         lastMousePosition,
+         eyeRadius
+      );
+
+      drawEye(
+         Vec2.add(eyesCenter, [offsetX, 0]),
+         lastMousePosition,
+         eyeRadius            
+      );
    })
 
    requestAnimationFrame(render);
