@@ -1,7 +1,7 @@
 const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
-canvas.width = window.innerWidth / 2;
-canvas.height = window.innerHeight / 2;
+canvas.width = 800;
+canvas.height = 600;
 
 let hovered = null;
 let lastMousePosition = [0, 0];
@@ -13,21 +13,18 @@ let objects = [
       color: 'seashell',
       size: [100, 100],
       position: [100, 200],
-      orientation: 0
    },
    {
       name: 'wide',
       color: 'navajowhite',
       size: [200, 100],
       position: [600, 150],
-      orientation: 0
    },
    {
       name: 'tall',
       color: 'navajowhite',
       size: [100, 200],
       position: [300, 300],
-      orientation: 0
    },
 ]
 
@@ -199,7 +196,7 @@ function render() {
 
 
       // Points
-      if(hovered === object) {
+      if(hovered === object || grabbedObject === object) {
          const closestPointsToRect = objects
             .filter(obj => obj !== hovered)
             .map(rectFromObject)
@@ -230,11 +227,33 @@ function render() {
             );
             ctx.stroke();
 
+            const distance = Vec2.distance(closestPointsOnRect[i], closestPointsToRect[i]).toFixed(0);
             ctx.font = '14px monospace';
             ctx.fillText(
-               Vec2.distance(closestPointsOnRect[i], closestPointsToRect[i]).toFixed(0),
+               distance,
                ...Vec2.add(closestPointsOnRect[i], Vec2.scale(Vec2.sub(closestPointsToRect[i], closestPointsOnRect[i]), 0.5)) 
             );
+
+            // ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+            // ctx.fillRect(
+            //    closestPointsToRect[i][0],
+            //    closestPointsToRect[i][1],     
+            //    object.size[0],
+            //    object.size[1]          
+            // );
+            // ctx.fill();
+            
+
+
+            if(distance < 50) {
+               object.position = Vec2.sub(
+                  closestPointsToRect[i],
+                  Vec2.sub(
+                     closestPointsOnRect[i],
+                     object.position
+                  )
+               );
+            }
          }
       }
 
