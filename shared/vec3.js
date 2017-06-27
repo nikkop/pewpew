@@ -8,7 +8,12 @@ const Vec3 = (function(){
       );
    }
 
+   function scale(v, scalar) {
+      return v.map(item => item * scalar);
+   }
+
    return {
-      dot
+      dot,
+      scale
    };
 })()

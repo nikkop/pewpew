@@ -80,6 +80,24 @@ const Mat4 = (function(){
       ]
    }
 
+   function rotateY(angle) {
+      return [
+         Math.cos(angle), 0, -Math.sin(angle), 0,
+         0, 1, 0, 0,
+         Math.sin(angle), 0, Math.cos(angle), 0,
+         0, 0, 0, 1
+      ]
+   }
+
+   function rotateX(angle) {
+      return [
+         1, 0, 0, 0,
+         0, Math.cos(angle), Math.sin(angle), 0,
+         0, -Math.sin(angle), Math.cos(angle), 0,
+         0, 0, 0, 1
+      ]
+   }
+
    function translate(v) {
       const m = identity();
       m[12] = v[0];
@@ -244,6 +262,8 @@ const Mat4 = (function(){
       transformVector4,
       transformVector3,
       multiply,
+      rotateX,
+      rotateY,
       rotateZ,
       perspective,
       translate,
